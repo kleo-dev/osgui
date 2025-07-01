@@ -1,46 +1,80 @@
-pub mod elements;
-pub mod render;
-pub mod widget;
-
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use minifb::Window;
 
-use crate::{render::RenderScope, widget::Element};
+use crate::{
+    extensions::Extension,
+    render::RenderScope,
+    style::Transform,
+    widget::{Element, Widget},
+};
 
-pub struct App {
+pub mod elements;
+pub mod extensions;
+pub mod macros;
+pub mod render;
+pub mod style;
+pub mod widget;
+
+pub struct Screen {
     window: Window,
-    elements: Vec<Arc<Mutex<Box<dyn Element>>>>,
+    pub widgets: Vec<Arc<Widget>>,
+    extensions: Vec<Arc<Box<dyn Extension>>>,
 }
 
-impl App {
-    pub fn new(win: Window) -> Self {
-        Self {
+impl Screen {
+    pub fn new(win: Window) -> Screen {
+        Screen {
             window: win,
-            elements: Vec::new(),
+            widgets: Vec::new(),
+            extensions: Vec::new(),
         }
     }
 
-    pub fn element<E: Element + 'static>(&mut self, e: E) {
-        self.elements.push(Arc::new(Mutex::new(Box::new(e))));
+    pub fn draw<E: Element + 'static>(&mut self, element: E) -> &Arc<Widget> {
+        self.widgets.push(Arc::new(Widget::new(Box::new(element))));
+        self.widgets.last().unwrap()
     }
 
-    pub fn run(&mut self) {
+    pub fn extension<E: Extension + 'static>(&mut self, ext: E) {
+        self.extensions.push(Arc::new(Box::new(ext)));
+    }
+
+    pub fn run(&mut self) -> std::io::Result<()> {
+        for elem in &mut self.widgets {
+            elem.component(Transform::new());
+        }
+
+        for ext in &self.extensions {
+            ext.init(&self.widgets);
+        }
+
         while self.window.is_open() {
             self.render();
+            std::thread::sleep(std::time::Duration::from_millis(28));
         }
+
+        Ok(())
     }
 
     fn render(&mut self) {
         let (w, h) = self.window.get_size();
         let mut scope = RenderScope::new(w, h);
 
-        for e in &self.elements {
-            e.lock().unwrap().render(&mut scope);
+        for e in &self.widgets {
+            e.0.lock().unwrap().render(&mut scope);
+            scope.draw();
         }
 
         self.window
             .update_with_buffer(&scope.get_buffer(), w, h)
             .unwrap();
+    }
+
+    pub fn render_extension(&self, wi: Arc<Widget>) -> std::io::Result<()> {
+        for ext in &self.extensions {
+            ext.render(&wi);
+        }
+        Ok(())
     }
 }
