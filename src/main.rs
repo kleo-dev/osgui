@@ -1,7 +1,10 @@
-use osgui::Window;
+use minifb::{Window, WindowOptions};
+use osgui::App;
 
 fn main() {
-    let win = Window::new();
+    let window = Window::new("minifb example", 500, 500, WindowOptions::default()).unwrap();
 
-    win.run();
+    let mut app = App::new(window);
+
+    app.run();
 }

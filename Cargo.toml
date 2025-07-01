@@ -7,6 +7,5 @@ edition = "2021"
 name = "osgui"
 
 [dependencies]
-pollster = "0.4.0"
-wgpu = "24.0.5"
-winit = "0.30.11"
+minifb = "0.28.0"
+

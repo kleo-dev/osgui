@@ -1,19 +1,29 @@
-mod app;
+use minifb::Window;
 
-pub struct Window {
-    width: f64,
-    height: f64,
+pub struct App {
+    window: Window,
 }
 
-impl Window {
-    pub fn new() -> Window {
-        Window {
-            width: 1000.0,
-            height: 650.0,
+impl App {
+    pub fn new(win: Window) -> Self {
+        Self { window: win }
+    }
+
+    pub fn run(&mut self) {
+        while self.window.is_open() {
+            self.render();
         }
     }
 
-    pub fn run(&self) {
-        app::run(self.width, self.height);
+    fn render(&mut self) {
+        let (w, h) = self.window.get_size();
+        let mut buffer = vec![0; w * h];
+        for y in 100..200 {
+            for x in 150..300 {
+                buffer[y * h + x] = 0xFF00FF;
+            }
+        }
+
+        self.window.update_with_buffer(&buffer, w, h).unwrap();
     }
 }
