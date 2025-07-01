@@ -2,7 +2,7 @@ use crate::style::{RawTransform, Transform};
 
 enum RenderMethod {
     // Text(String),
-    Rectangle(usize, usize, u32),
+    Rectangle(usize, usize, usize, usize, u32),
 }
 
 pub struct RenderScope {
@@ -29,16 +29,9 @@ impl RenderScope {
         transform.use_position(self.parent_width, self.parent_height, &mut self.transform);
     }
 
-    // pub fn draw_text(&mut self, text: &str) {
-    //     self.render_stack.push(RenderMethod::Text(text.to_string()));
-    //     let (w, h) = utils::str_size(text);
-    //     self.transform.width = self.transform.width.max(w);
-    //     self.transform.height = self.transform.height.max(h);
-    // }
-
-    pub fn draw_rect(&mut self, width: usize, height: usize, color: u32) {
+    pub fn draw_rect(&mut self, x: usize, y: usize, width: usize, height: usize, color: u32) {
         self.render_stack
-            .push(RenderMethod::Rectangle(width, height, color));
+            .push(RenderMethod::Rectangle(x, y, width, height, color));
         self.transform.width = self.transform.width.max(width);
         self.transform.height = self.transform.height.max(height);
     }
@@ -46,10 +39,14 @@ impl RenderScope {
     pub fn draw(&mut self) {
         for m in &self.render_stack {
             match m {
-                &RenderMethod::Rectangle(width, height, color) => {
-                    for y in 0..height {
-                        for x in 0..width {
-                            self.buffer[y * self.parent_height + x] = color;
+                &RenderMethod::Rectangle(pos_x, pos_y, width, height, color) => {
+                    for x in self.transform.x + pos_x..self.transform.x + pos_x + width {
+                        for y in self.transform.y + pos_y..self.transform.y + pos_y + height {
+                            if self.buffer.len() > y * self.parent_height + x
+                                && self.parent_width > x
+                            {
+                                self.buffer[y * self.parent_height + x] = color;
+                            }
                         }
                     }
                 }

@@ -2,6 +2,7 @@ use minifb::{Window, WindowOptions};
 use osgui::{
     elements::Rect,
     extensions::velocity::{Velocity, VelocityExtension},
+    style::Transform,
     Screen,
 };
 
@@ -20,7 +21,9 @@ fn main() {
     let mut app = Screen::new(window);
     app.extension(VelocityExtension);
 
-    app.draw(Rect).component(Velocity(100, 0));
+    app.draw(Rect)
+        .component(Transform::new().dimensions(40, 40))
+        .component(Velocity(500, 0));
 
     app.run().unwrap();
 }

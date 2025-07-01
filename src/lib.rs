@@ -61,8 +61,19 @@ impl Screen {
         let (w, h) = self.window.get_size();
         let mut scope = RenderScope::new(w, h);
 
-        for e in &self.widgets {
-            e.0.lock().unwrap().render(&mut scope);
+        for elem in &self.widgets {
+            scope.clear();
+            if let Some(t) = elem.get() {
+                scope.set_transform(&t);
+            }
+
+            self.render_extension(elem.clone()).unwrap();
+            elem.0.lock().unwrap().render(&mut scope);
+
+            if let Some(t) = elem.get() {
+                scope.set_transform(&t);
+            }
+
             scope.draw();
         }
 

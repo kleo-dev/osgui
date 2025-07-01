@@ -4,7 +4,8 @@ pub struct Rect;
 
 impl Element for Rect {
     fn render(&mut self, scope: &mut crate::render::RenderScope) {
-        scope.draw_rect(300, 300, 0xffffff);
+        let (w, h) = scope.get_size();
+        scope.draw_rect(0, 0, w, h, 0xffffff);
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
