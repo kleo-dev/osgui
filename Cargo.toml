@@ -8,4 +8,5 @@ name = "osgui"
 
 [dependencies]
 minifb = "0.28.0"
+rusttype = "0.9.3"
 

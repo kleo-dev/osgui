@@ -14,6 +14,7 @@ pub mod extensions;
 pub mod macros;
 pub mod render;
 pub mod style;
+pub mod utils;
 pub mod widget;
 
 pub struct Screen {

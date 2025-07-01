@@ -1,7 +1,14 @@
-use crate::style::{RawTransform, Transform};
+use rusttype::{Font, Scale};
+
+use crate::{
+    style::{RawTransform, Transform},
+    utils,
+};
+
+const FONT: &[u8] = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
 
 enum RenderMethod {
-    // Text(String),
+    Text(usize, usize, f32, String),
     Rectangle(usize, usize, usize, usize, u32),
 }
 
@@ -29,6 +36,22 @@ impl RenderScope {
         transform.use_position(self.parent_width, self.parent_height, &mut self.transform);
     }
 
+    pub fn draw_text(
+        &mut self,
+        x: usize,
+        y: usize,
+        scale: f32,
+        text: &str,
+        // color: u32,
+    ) {
+        self.render_stack
+            .push(RenderMethod::Text(x, y, scale, text.to_string()));
+        let font = Font::try_from_bytes(FONT).unwrap();
+        let (w, h) = utils::measure_text(&font, &text, Scale::uniform(scale));
+        self.transform.width = self.transform.width.max(w as usize);
+        self.transform.height = self.transform.height.max(h as usize);
+    }
+
     pub fn draw_rect(&mut self, x: usize, y: usize, width: usize, height: usize, color: u32) {
         self.render_stack
             .push(RenderMethod::Rectangle(x, y, width, height, color));
@@ -47,6 +70,42 @@ impl RenderScope {
                             {
                                 self.buffer[y * self.parent_height + x] = color;
                             }
+                        }
+                    }
+                }
+
+                RenderMethod::Text(px, py, scale, text) => {
+                    let font = Font::try_from_bytes(FONT).unwrap();
+                    let scale = rusttype::Scale::uniform(*scale);
+                    let v_metrics = font.v_metrics(scale);
+                    let glyphs: Vec<_> = font
+                        .layout(
+                            text,
+                            scale,
+                            rusttype::point(
+                                (self.transform.x + px) as f32,
+                                (self.transform.y + py) as f32 + v_metrics.ascent,
+                            ),
+                        )
+                        .collect();
+                    for glyph in glyphs {
+                        if let Some(bb) = glyph.pixel_bounding_box() {
+                            glyph.draw(|x, y, v| {
+                                let x = x as i32 + bb.min.x + *px as i32;
+                                let y = y as i32 + bb.min.y + *py as i32;
+
+                                if x >= 0
+                                    && x < self.parent_width as i32
+                                    && y >= 0
+                                    && y < self.parent_height as i32
+                                {
+                                    let index =
+                                        (y as usize * self.parent_width + x as usize) as usize;
+                                    let intensity = (v * 255.0) as u32;
+                                    let color = (intensity << 16) | (intensity << 8) | intensity;
+                                    self.buffer[index] = color;
+                                }
+                            });
                         }
                     }
                 }
