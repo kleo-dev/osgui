@@ -5,10 +5,10 @@ use crate::{
     utils,
 };
 
-const FONT: &[u8] = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+const FONT: &[u8] = include_bytes!("../assets/DejaVuSans.ttf");
 
 enum RenderMethod {
-    Text(usize, usize, f32, String),
+    Text(String, usize, usize, f32, u32),
     Rectangle(usize, usize, usize, usize, u32),
 }
 
@@ -36,16 +36,9 @@ impl RenderScope {
         transform.use_position(self.parent_width, self.parent_height, &mut self.transform);
     }
 
-    pub fn draw_text(
-        &mut self,
-        x: usize,
-        y: usize,
-        scale: f32,
-        text: &str,
-        // color: u32,
-    ) {
+    pub fn draw_text(&mut self, x: usize, y: usize, scale: f32, text: &str, color: u32) {
         self.render_stack
-            .push(RenderMethod::Text(x, y, scale, text.to_string()));
+            .push(RenderMethod::Text(text.to_string(), x, y, scale, color));
         let font = Font::try_from_bytes(FONT).unwrap();
         let (w, h) = utils::measure_text(&font, &text, Scale::uniform(scale));
         self.transform.width = self.transform.width.max(w as usize);
@@ -74,7 +67,7 @@ impl RenderScope {
                     }
                 }
 
-                RenderMethod::Text(px, py, scale, text) => {
+                RenderMethod::Text(text, px, py, scale, base_color) => {
                     let font = Font::try_from_bytes(FONT).unwrap();
                     let scale = rusttype::Scale::uniform(*scale);
                     let v_metrics = font.v_metrics(scale);
@@ -101,8 +94,13 @@ impl RenderScope {
                                 {
                                     let index =
                                         (y as usize * self.parent_width + x as usize) as usize;
-                                    let intensity = (v * 255.0) as u32;
-                                    let color = (intensity << 16) | (intensity << 8) | intensity;
+                                    let r_base = ((base_color >> 16) & 0xFF) as f32;
+                                    let g_base = ((base_color >> 8) & 0xFF) as f32;
+                                    let b_base = (base_color & 0xFF) as f32;
+                                    let r = (r_base * v) as u32;
+                                    let g = (g_base * v) as u32;
+                                    let b = (b_base * v) as u32;
+                                    let color = (r << 16) | (g << 8) | b;
                                     self.buffer[index] = color;
                                 }
                             });

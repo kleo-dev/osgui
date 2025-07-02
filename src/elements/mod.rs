@@ -19,7 +19,7 @@ impl Element for Rect {
 
 impl Element for String {
     fn render(&mut self, scope: &mut crate::render::RenderScope) {
-        scope.draw_text(0, 0, 40.0, self);
+        scope.draw_text(0, 0, 40.0, self, 0xffffff);
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
