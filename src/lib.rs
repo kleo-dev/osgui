@@ -79,7 +79,7 @@ impl Screen {
         }
 
         self.window
-            .update_with_buffer(&scope.get_buffer(), w, h)
+            .update_with_buffer(&scope.get_buffer1d(), w, h)
             .unwrap();
     }
 

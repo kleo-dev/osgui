@@ -24,9 +24,9 @@ impl Element for Div {
             if let Some(t) = elem.get() {
                 scope.set_transform(&t);
             }
-
-            scope.draw_buf(scope_parent.get_buffer_mut());
         }
+
+        scope.draw_buf(scope_parent.get_buffer_mut(), 0, 0);
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

@@ -18,13 +18,13 @@ pub struct RenderScope {
     render_stack: Vec<RenderMethod>,
     parent_width: usize,
     parent_height: usize,
-    buffer: Vec<u32>,
+    buffer: Vec<Vec<u32>>,
 }
 
 impl RenderScope {
     pub fn new(w: usize, h: usize) -> Self {
         Self {
-            buffer: vec![0; w * h],
+            buffer: vec![vec![0; w]; h],
             render_stack: Vec::new(),
             parent_width: w,
             parent_height: h,
@@ -54,59 +54,61 @@ impl RenderScope {
     }
 
     pub fn draw(&mut self) {
-        let mut b = self.buffer.clone();
-        self.draw_buf(&mut b);
-        self.buffer = b;
+        let mut tmp = self.buffer.clone();
+        self.draw_buf(&mut tmp, 0, 0);
+        self.buffer = tmp;
     }
 
-    pub fn draw_buf(&mut self, buf: &mut Vec<u32>) {
+    pub fn draw_buf(&self, buf: &mut Vec<Vec<u32>>, offset_x: usize, offset_y: usize) {
+        let offset_x = self.transform.x + offset_x;
+        let offset_y = self.transform.y + offset_y;
+
         for m in &self.render_stack {
             match m {
-                &RenderMethod::Rectangle(pos_x, pos_y, width, height, color) => {
-                    for x in self.transform.x + pos_x..self.transform.x + pos_x + width {
-                        for y in self.transform.y + pos_y..self.transform.y + pos_y + height {
-                            if buf.len() > y * self.parent_height + x && self.parent_width > x {
-                                buf[y * self.parent_height + x] = color;
-                            }
+                &RenderMethod::Rectangle(px, py, width, height, color) => {
+                    for y in offset_y + py..(offset_y + py + height).min(self.parent_height) {
+                        for x in offset_x + px..(offset_x + px + width).min(self.parent_width) {
+                            buf[y][x] = color;
                         }
                     }
                 }
 
                 RenderMethod::Text(text, px, py, scale, base_color) => {
                     let font = Font::try_from_bytes(FONT).unwrap();
-                    let scale = rusttype::Scale::uniform(*scale);
+                    let scale = Scale::uniform(*scale);
                     let v_metrics = font.v_metrics(scale);
+
                     let glyphs: Vec<_> = font
                         .layout(
                             text,
                             scale,
                             rusttype::point(
-                                (self.transform.x + px) as f32,
-                                (self.transform.y + py) as f32 + v_metrics.ascent,
+                                (offset_x + px) as f32,
+                                (offset_y + py) as f32 + v_metrics.ascent,
                             ),
                         )
                         .collect();
+
                     for glyph in glyphs {
                         if let Some(bb) = glyph.pixel_bounding_box() {
-                            glyph.draw(|x, y, v| {
-                                let x = x as i32 + bb.min.x + *px as i32;
-                                let y = y as i32 + bb.min.y + *py as i32;
+                            glyph.draw(|gx, gy, v| {
+                                let x = gx as i32 + bb.min.x + *px as i32;
+                                let y = gy as i32 + bb.min.y + *py as i32;
 
-                                if x >= 0
-                                    && x < self.parent_width as i32
-                                    && y >= 0
-                                    && y < self.parent_height as i32
+                                if (0..self.parent_width as i32).contains(&x)
+                                    && (0..self.parent_height as i32).contains(&y)
                                 {
-                                    let index =
-                                        (y as usize * self.parent_width + x as usize) as usize;
+                                    let (x, y) = (x as usize, y as usize);
+
                                     let r_base = ((base_color >> 16) & 0xFF) as f32;
                                     let g_base = ((base_color >> 8) & 0xFF) as f32;
                                     let b_base = (base_color & 0xFF) as f32;
+
                                     let r = (r_base * v) as u32;
                                     let g = (g_base * v) as u32;
                                     let b = (b_base * v) as u32;
-                                    let color = (r << 16) | (g << 8) | b;
-                                    buf[index] = color;
+
+                                    buf[y][x] = (r << 16) | (g << 8) | b;
                                 }
                             });
                         }
@@ -145,11 +147,18 @@ impl RenderScope {
         (self.parent_width, self.parent_height)
     }
 
-    pub fn get_buffer(&self) -> Vec<u32> {
+    pub fn get_buffer1d(&self) -> Vec<u32> {
+        self.buffer
+            .iter()
+            .flat_map(|row| row.iter().copied())
+            .collect()
+    }
+
+    pub fn get_buffer(&self) -> Vec<Vec<u32>> {
         self.buffer.clone()
     }
 
-    pub fn get_buffer_mut(&mut self) -> &mut Vec<u32> {
+    pub fn get_buffer_mut(&mut self) -> &mut Vec<Vec<u32>> {
         &mut self.buffer
     }
 }

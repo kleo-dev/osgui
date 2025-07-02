@@ -21,10 +21,9 @@ fn main() {
     let mut d = Div::new();
 
     d.draw("test".to_string());
-    d.draw("abc".to_string());
+    d.draw("abc".to_string()).component(Transform::center());
 
-    app.draw(d)
-        .component(Transform::center().dimensions(150, 80));
+    app.draw(d);
 
     app.run().unwrap();
 }
