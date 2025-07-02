@@ -1,5 +1,6 @@
 use crate::component;
 
+#[derive(Debug, Clone)]
 pub struct RawTransform {
     pub x: usize,
     pub y: usize,

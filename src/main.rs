@@ -20,10 +20,11 @@ fn main() {
 
     let mut d = Div::new();
 
-    d.draw("test".to_string());
-    d.draw("abc".to_string()).component(Transform::center());
+    d.draw("test".to_string())
+        .component(Transform::new().margin(20, 0));
+    d.draw("abcsdsd".to_string());
 
-    app.draw(d);
+    app.draw(d).component(Transform::center());
 
     app.run().unwrap();
 }

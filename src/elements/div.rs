@@ -26,7 +26,7 @@ impl Element for Div {
             }
         }
 
-        scope.draw_buf(scope_parent.get_buffer_mut(), 0, 0);
+        scope_parent.merge(scope, 0, 0);
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

@@ -11,13 +11,16 @@ const FONT: &[u8] = include_bytes!("../assets/DejaVuSans.ttf");
 pub enum RenderMethod {
     Text(String, usize, usize, f32, u32),
     Rectangle(usize, usize, usize, usize, u32),
+    Merge(RenderScope, usize, usize),
 }
 
+#[derive(Debug, Clone)]
 pub struct RenderScope {
     transform: RawTransform,
     render_stack: Vec<RenderMethod>,
     parent_width: usize,
     parent_height: usize,
+    max_size: (usize, usize),
     buffer: Vec<Vec<u32>>,
 }
 
@@ -29,12 +32,8 @@ impl RenderScope {
             parent_width: w,
             parent_height: h,
             transform: RawTransform::new(),
+            max_size: (0, 0),
         }
-    }
-
-    pub fn set_transform(&mut self, transform: &Transform) {
-        transform.use_dimensions(&mut self.transform);
-        transform.use_position(self.parent_width, self.parent_height, &mut self.transform);
     }
 
     pub fn draw_text(&mut self, x: usize, y: usize, scale: f32, text: &str, color: u32) {
@@ -44,6 +43,7 @@ impl RenderScope {
         let (w, h) = utils::measure_text(&font, &text, Scale::uniform(scale));
         self.transform.width = self.transform.width.max(w as usize);
         self.transform.height = self.transform.height.max(h as usize);
+        self.update_size();
     }
 
     pub fn draw_rect(&mut self, x: usize, y: usize, width: usize, height: usize, color: u32) {
@@ -51,8 +51,21 @@ impl RenderScope {
             .push(RenderMethod::Rectangle(x, y, width, height, color));
         self.transform.width = self.transform.width.max(width);
         self.transform.height = self.transform.height.max(height);
+        self.update_size();
     }
 
+    pub fn merge(&mut self, scope: RenderScope, offset_x: usize, offset_y: usize) {
+        let (w, h) = scope.get_max_size();
+        self.render_stack
+            .push(RenderMethod::Merge(scope, offset_x, offset_y));
+        self.transform.width = self.transform.width.max(w as usize);
+        self.transform.height = self.transform.height.max(h as usize);
+        self.update_size();
+    }
+}
+
+// After draw
+impl RenderScope {
     pub fn draw(&mut self) {
         let mut tmp = self.buffer.clone();
         self.draw_buf(&mut tmp, 0, 0);
@@ -114,8 +127,25 @@ impl RenderScope {
                         }
                     }
                 }
+                RenderMethod::Merge(scope, ox, oy) => {
+                    scope.draw_buf(buf, *ox + self.transform.x, *oy + self.transform.y);
+                }
             }
         }
+    }
+}
+
+// Update or variable functions
+
+impl RenderScope {
+    pub fn set_transform(&mut self, transform: &Transform) {
+        transform.use_dimensions(&mut self.transform);
+        transform.use_position(self.parent_width, self.parent_height, &mut self.transform);
+    }
+
+    pub fn update_size(&mut self) {
+        self.max_size.0 = self.max_size.0.max(self.transform.width);
+        self.max_size.1 = self.max_size.1.max(self.transform.height);
     }
 
     pub fn clear(&mut self) {
@@ -126,6 +156,10 @@ impl RenderScope {
 
     pub fn get_size(&self) -> (usize, usize) {
         (self.transform.width, self.transform.height)
+    }
+
+    pub fn get_max_size(&self) -> (usize, usize) {
+        self.max_size
     }
 
     pub fn get_size_or_parent(&self) -> (usize, usize) {
