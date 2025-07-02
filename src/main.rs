@@ -1,5 +1,7 @@
 use minifb::{Window, WindowOptions};
-use osgui::{extensions::velocity::VelocityExtension, style::Transform, Screen};
+use osgui::{
+    elements::div::Div, extensions::velocity::VelocityExtension, style::Transform, Screen,
+};
 
 fn main() {
     let window = Window::new(
@@ -16,7 +18,13 @@ fn main() {
     let mut app = Screen::new(window);
     app.extension(VelocityExtension);
 
-    app.draw("test".to_string()).component(Transform::center());
+    let mut d = Div::new();
+
+    d.draw("test".to_string());
+    d.draw("abc".to_string());
+
+    app.draw(d)
+        .component(Transform::center().dimensions(150, 80));
 
     app.run().unwrap();
 }

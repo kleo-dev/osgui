@@ -7,7 +7,8 @@ use crate::{
 
 const FONT: &[u8] = include_bytes!("../assets/DejaVuSans.ttf");
 
-enum RenderMethod {
+#[derive(Debug, Clone)]
+pub enum RenderMethod {
     Text(String, usize, usize, f32, u32),
     Rectangle(usize, usize, usize, usize, u32),
 }
@@ -53,15 +54,19 @@ impl RenderScope {
     }
 
     pub fn draw(&mut self) {
+        let mut b = self.buffer.clone();
+        self.draw_buf(&mut b);
+        self.buffer = b;
+    }
+
+    pub fn draw_buf(&mut self, buf: &mut Vec<u32>) {
         for m in &self.render_stack {
             match m {
                 &RenderMethod::Rectangle(pos_x, pos_y, width, height, color) => {
                     for x in self.transform.x + pos_x..self.transform.x + pos_x + width {
                         for y in self.transform.y + pos_y..self.transform.y + pos_y + height {
-                            if self.buffer.len() > y * self.parent_height + x
-                                && self.parent_width > x
-                            {
-                                self.buffer[y * self.parent_height + x] = color;
+                            if buf.len() > y * self.parent_height + x && self.parent_width > x {
+                                buf[y * self.parent_height + x] = color;
                             }
                         }
                     }
@@ -101,7 +106,7 @@ impl RenderScope {
                                     let g = (g_base * v) as u32;
                                     let b = (b_base * v) as u32;
                                     let color = (r << 16) | (g << 8) | b;
-                                    self.buffer[index] = color;
+                                    buf[index] = color;
                                 }
                             });
                         }
@@ -121,11 +126,30 @@ impl RenderScope {
         (self.transform.width, self.transform.height)
     }
 
+    pub fn get_size_or_parent(&self) -> (usize, usize) {
+        (
+            if self.transform.width > 0 {
+                self.transform.width
+            } else {
+                self.parent_width
+            },
+            if self.transform.height > 0 {
+                self.transform.height
+            } else {
+                self.parent_height
+            },
+        )
+    }
+
     pub fn get_parent_size(&self) -> (usize, usize) {
         (self.parent_width, self.parent_height)
     }
 
     pub fn get_buffer(&self) -> Vec<u32> {
         self.buffer.clone()
+    }
+
+    pub fn get_buffer_mut(&mut self) -> &mut Vec<u32> {
+        &mut self.buffer
     }
 }
