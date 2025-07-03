@@ -147,6 +147,10 @@ impl RenderScope {
         transform.use_position(self.parent_width, self.parent_height, &mut self.transform);
     }
 
+    pub fn get_transform(&mut self) -> RawTransform {
+        self.transform.clone()
+    }
+
     pub fn update_size(&mut self) {
         self.max_size.0 = self.max_size.0.max(self.transform.width);
         self.max_size.1 = self.max_size.1.max(self.transform.height);

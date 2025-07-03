@@ -1,6 +1,9 @@
 use minifb::{Window, WindowOptions};
 use osgui::{
-    elements::div::Div, extensions::velocity::VelocityExtension, style::Transform, Screen,
+    elements::div::Div,
+    extensions::{mouse::MouseExtension, velocity::VelocityExtension},
+    style::Transform,
+    Screen,
 };
 
 fn main() {
@@ -17,6 +20,7 @@ fn main() {
 
     let mut app = Screen::new(window);
     app.extension(VelocityExtension);
+    app.extension(MouseExtension::new());
 
     let mut d = Div::new();
 

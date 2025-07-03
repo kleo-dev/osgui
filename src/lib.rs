@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use minifb::Window;
 
@@ -20,7 +20,7 @@ pub mod widget;
 pub struct Screen {
     window: Window,
     pub widgets: Vec<Arc<Widget>>,
-    extensions: Vec<Arc<Box<dyn Extension>>>,
+    extensions: Vec<Arc<Mutex<Box<dyn Extension>>>>,
 }
 
 impl Screen {
@@ -38,7 +38,7 @@ impl Screen {
     }
 
     pub fn extension<E: Extension + 'static>(&mut self, ext: E) {
-        self.extensions.push(Arc::new(Box::new(ext)));
+        self.extensions.push(Arc::new(Mutex::new(Box::new(ext))));
     }
 
     pub fn run(&mut self) -> std::io::Result<()> {
@@ -47,7 +47,7 @@ impl Screen {
         }
 
         for ext in &self.extensions {
-            ext.init(&self.widgets);
+            ext.lock().unwrap().init(&self.widgets);
         }
 
         while self.window.is_open() {
@@ -68,11 +68,16 @@ impl Screen {
                 scope.set_transform(&t);
             }
 
-            self.render_extension(elem.clone()).unwrap();
             elem.0.lock().unwrap().render(&mut scope);
 
             if let Some(t) = elem.get() {
                 scope.set_transform(&t);
+            }
+
+            for ext in &self.extensions {
+                ext.lock()
+                    .unwrap()
+                    .render(elem, scope.get_transform(), &self.window);
             }
 
             scope.draw();
@@ -81,12 +86,5 @@ impl Screen {
         self.window
             .update_with_buffer(&scope.get_buffer1d(), w, h)
             .unwrap();
-    }
-
-    pub fn render_extension(&self, wi: Arc<Widget>) -> std::io::Result<()> {
-        for ext in &self.extensions {
-            ext.render(&wi);
-        }
-        Ok(())
     }
 }

@@ -5,7 +5,7 @@ use crate::{component, extensions::Extension, widget::Widget};
 pub struct TickExtension(pub usize);
 
 impl Extension for TickExtension {
-    fn init(&self, widgets: &Vec<Arc<Widget>>) {
+    fn init(&mut self, widgets: &Vec<Arc<Widget>>) {
         let rate_dur = 1000 / self.0 as u64;
         std::thread::spawn({
             let widgets = widgets.clone();
