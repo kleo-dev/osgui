@@ -1,16 +1,11 @@
 use std::sync::Arc;
 
-use crate::{
-    component,
-    extensions::Extension,
-    style::{Position, Transform},
-    widget::Widget,
-};
+use crate::{component, extensions::Extension, style::Transform, widget::Widget};
 
 pub struct VelocityExtension;
 
 impl VelocityExtension {
-    fn apply_velocity(ticks: usize, velocity: i32, x: &mut usize) {
+    fn apply_velocity(ticks: usize, velocity: i32, x: &mut i32) {
         if velocity.abs() != 0 && ticks as i32 % (1000 / velocity.abs()) == 0 {
             if velocity > 0 {
                 *x += 1;
@@ -25,16 +20,8 @@ impl VelocityExtension {
     fn apply_velocity_xy(ticks: usize, widget: &Arc<Widget>) {
         if let Some(velocity) = widget.get::<Velocity>() {
             if let Some(mut t) = widget.get::<Transform>() {
-                match &mut t.x {
-                    Position::Const(x) => Self::apply_velocity(ticks, velocity.0, x),
-                    _ => {}
-                }
-
-                match &mut t.y {
-                    Position::Const(y) => Self::apply_velocity(ticks, velocity.1, y),
-                    _ => {}
-                }
-
+                Self::apply_velocity(ticks, velocity.0, &mut t.mx);
+                Self::apply_velocity(ticks, velocity.1, &mut t.my);
                 widget.set_component(t);
             }
         }

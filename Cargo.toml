@@ -10,5 +10,6 @@ name = "osgui"
 
 [dependencies]
 minifb = "0.28.0"
+once_cell = "1.21.3"
 rusttype = "0.9.3"
 

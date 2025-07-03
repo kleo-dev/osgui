@@ -1,6 +1,5 @@
-use std::sync::{Arc, Mutex};
-
 use minifb::Window;
+use std::sync::{Arc, Mutex};
 
 use crate::{
     extensions::Extension,
@@ -24,8 +23,8 @@ pub struct Screen {
 }
 
 impl Screen {
-    pub fn new(win: Window) -> Screen {
-        Screen {
+    pub fn new(win: Window) -> Self {
+        Self {
             window: win,
             widgets: Vec::new(),
             extensions: Vec::new(),
@@ -42,7 +41,7 @@ impl Screen {
     }
 
     pub fn run(&mut self) -> std::io::Result<()> {
-        for elem in &mut self.widgets {
+        for elem in &self.widgets {
             elem.component(Transform::new());
         }
 
@@ -50,17 +49,30 @@ impl Screen {
             ext.lock().unwrap().init(&self.widgets);
         }
 
+        let (w, h) = self.window.get_size();
+        let mut scope = RenderScope::new(w, h);
+
+        let mut last_fps_check = std::time::Instant::now();
+        let mut frame_count = 0;
+
         while self.window.is_open() {
-            self.render();
-            std::thread::sleep(std::time::Duration::from_millis(28));
+            self.render(&mut scope);
+            frame_count += 1;
+
+            // Print FPS every second
+            if last_fps_check.elapsed() >= std::time::Duration::from_secs(1) {
+                println!("{}", frame_count);
+                frame_count = 0;
+                last_fps_check = std::time::Instant::now();
+            }
         }
 
         Ok(())
     }
 
-    fn render(&mut self) {
+    fn render(&mut self, scope: &mut RenderScope) {
         let (w, h) = self.window.get_size();
-        let mut scope = RenderScope::new(w, h);
+        scope.resize_if_needed(w, h);
 
         for ext in &self.extensions {
             ext.lock()
@@ -74,7 +86,7 @@ impl Screen {
                 scope.set_transform(&t);
             }
 
-            elem.0.lock().unwrap().render(&mut scope);
+            elem.0.lock().unwrap().render(scope);
 
             if let Some(t) = elem.get() {
                 scope.set_transform(&t);
@@ -90,7 +102,8 @@ impl Screen {
         }
 
         self.window
-            .update_with_buffer(&scope.get_buffer1d(), w, h)
+            .update_with_buffer(scope.get_buffer1d(), w, h)
             .unwrap();
+        scope.clear_buffer();
     }
 }

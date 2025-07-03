@@ -341,6 +341,7 @@ name = "osgui"
 version = "0.0.1"
 dependencies = [
  "minifb",
+ "once_cell",
  "rusttype",
 ]
 

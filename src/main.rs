@@ -1,7 +1,10 @@
 use minifb::{Window, WindowOptions};
 use osgui::{
     elements::div::{Div, DivStyle},
-    extensions::mouse::{MouseExtension, OnClick},
+    extensions::{
+        mouse::{MouseExtension, OnClick},
+        velocity::{Velocity, VelocityExtension},
+    },
     style::Transform,
     Screen,
 };
@@ -20,6 +23,7 @@ fn main() {
 
     let mut app = Screen::new(window);
     app.extension(MouseExtension::new());
+    app.extension(VelocityExtension);
 
     milestones(&mut app);
 
@@ -49,6 +53,7 @@ fn milestones(app: &mut Screen) {
                 osgui::style::Position::Center,
                 osgui::style::Position::Const(145 + ((194 + 30) * i)),
             ))
-            .component(OnClick(|_| println!("Clicked!")));
+            .component(OnClick(|_| println!("Clicked!")))
+            .component(Velocity(50, 0));
     }
 }
