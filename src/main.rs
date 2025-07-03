@@ -1,7 +1,7 @@
 use minifb::{Window, WindowOptions};
 use osgui::{
-    elements::div::Div,
-    extensions::{mouse::MouseExtension, velocity::VelocityExtension},
+    elements::div::{Div, DivStyle},
+    extensions::mouse::{MouseExtension, OnClick},
     style::Transform,
     Screen,
 };
@@ -9,8 +9,8 @@ use osgui::{
 fn main() {
     let window = Window::new(
         "minifb example",
-        200,
-        200,
+        1920,
+        1080,
         WindowOptions {
             resize: false,
             ..Default::default()
@@ -19,17 +19,33 @@ fn main() {
     .unwrap();
 
     let mut app = Screen::new(window);
-    app.extension(VelocityExtension);
     app.extension(MouseExtension::new());
 
-    let mut d = Div::new();
-
-    d.draw("test".to_string()).component(Transform::center());
-    d.draw("abc".to_string())
-        .component(Transform::center().margin(0, 25));
-
-    app.draw(d)
-        .component(Transform::center().dimensions(150, 150));
+    milestones(&mut app);
 
     app.run().unwrap();
+}
+
+fn milestones(app: &mut Screen) {
+    for i in 0..4 {
+        let mut milestone = Div {
+            style: DivStyle {
+                background_color: 0x1D1D1D,
+                corner_radius: 24,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        milestone
+            .draw(format!("My Milestone"))
+            .component(Transform::center());
+
+        app.draw(milestone)
+            .component(Transform::new().dimensions(873, 194).pos(
+                osgui::style::Position::Center,
+                osgui::style::Position::Const(145 + ((194 + 30) * i)),
+            ))
+            .component(OnClick(|_| println!("Clicked!")));
+    }
 }

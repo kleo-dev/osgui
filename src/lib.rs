@@ -62,6 +62,12 @@ impl Screen {
         let (w, h) = self.window.get_size();
         let mut scope = RenderScope::new(w, h);
 
+        for ext in &self.extensions {
+            ext.lock()
+                .unwrap()
+                .before_render(&self.widgets, scope.get_transform(), &self.window);
+        }
+
         for elem in &self.widgets {
             scope.clear();
             if let Some(t) = elem.get() {

@@ -5,19 +5,30 @@ use crate::{
     widget::{Element, Widget},
 };
 
+#[derive(Default)]
 pub struct DivStyle {
-    background_color: u32,
+    pub background_color: u32,
+    pub corner_radius: usize,
 }
 
+#[derive(Default)]
 pub struct Div {
-    children: Vec<Arc<Widget>>,
-    style: DivStyle,
+    pub children: Vec<Arc<Widget>>,
+    pub style: DivStyle,
 }
 
 impl Element for Div {
     fn render(&mut self, scope_parent: &mut crate::render::RenderScope) {
         let (w, h) = scope_parent.get_size_or_parent();
-        scope_parent.draw_rect(0, 0, w, h, self.style.background_color);
+        scope_parent.draw_rect_rounded(
+            0,
+            0,
+            w,
+            h,
+            self.style.corner_radius,
+            self.style.background_color,
+        );
+
         let mut scope = RenderScope::new(w, h);
 
         for elem in &self.children {
@@ -31,7 +42,7 @@ impl Element for Div {
             if let Some(t) = elem.get() {
                 scope.set_transform(&t);
             }
-            scope_parent.merge(scope.clone(), 0, 0);
+            scope_parent.merge(scope.clone());
         }
     }
 
@@ -45,15 +56,6 @@ impl Element for Div {
 }
 
 impl Div {
-    pub fn new() -> Self {
-        Self {
-            children: Vec::new(),
-            style: DivStyle {
-                background_color: 0xF00000,
-            },
-        }
-    }
-
     pub fn draw<E: Element + 'static>(&mut self, element: E) -> &Arc<Widget> {
         self.children.push(Arc::new(Widget::new(Box::new(element))));
         self.children.last().unwrap()

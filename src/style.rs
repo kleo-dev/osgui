@@ -64,6 +64,12 @@ impl Transform {
         self
     }
 
+    pub fn pos(mut self, x: Position, y: Position) -> Self {
+        self.x = x;
+        self.y = y;
+        self
+    }
+
     pub fn dimensions(mut self, width: usize, height: usize) -> Self {
         self.width = Dimension::Const(width);
         self.height = Dimension::Const(height);
