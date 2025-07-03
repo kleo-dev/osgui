@@ -102,9 +102,17 @@ impl RenderScope {
                         )
                         .collect();
 
+                    let r_base = ((base_color >> 16) & 0xFF) as f32;
+                    let g_base = ((base_color >> 8) & 0xFF) as f32;
+                    let b_base = (base_color & 0xFF) as f32;
+
                     for glyph in glyphs {
                         if let Some(bb) = glyph.pixel_bounding_box() {
                             glyph.draw(|gx, gy, v| {
+                                if v < 0.5 {
+                                    return;
+                                }
+
                                 let x = gx as i32 + bb.min.x + *px as i32;
                                 let y = gy as i32 + bb.min.y + *py as i32;
 
@@ -112,10 +120,6 @@ impl RenderScope {
                                     && (0..self.parent_height as i32).contains(&y)
                                 {
                                     let (x, y) = (x as usize, y as usize);
-
-                                    let r_base = ((base_color >> 16) & 0xFF) as f32;
-                                    let g_base = ((base_color >> 8) & 0xFF) as f32;
-                                    let b_base = (base_color & 0xFF) as f32;
 
                                     let r = (r_base * v) as u32;
                                     let g = (g_base * v) as u32;
