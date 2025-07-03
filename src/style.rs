@@ -53,6 +53,11 @@ impl Transform {
         }
     }
 
+    pub fn top(mut self, m: usize) -> Self {
+        self.y = Position::Const(m);
+        self
+    }
+
     pub fn bottom(mut self) -> Self {
         self.y = Position::End;
         self

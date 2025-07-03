@@ -27,6 +27,9 @@ fn main() {
 }
 
 fn milestones(app: &mut Screen) {
+    app.draw(format!("My Project"))
+        .component(Transform::center().top(20));
+
     for i in 0..4 {
         let mut milestone = Div {
             style: DivStyle {
