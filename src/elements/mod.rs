@@ -2,12 +2,12 @@ pub mod div;
 
 use crate::widget::Element;
 
-pub struct Rect(pub u32);
+pub struct Rect(pub u32, pub usize);
 
 impl Element for Rect {
     fn render(&mut self, scope: &mut crate::render::RenderScope) {
         let (w, h) = scope.get_size();
-        scope.draw_rect(0, 0, w, h, self.0);
+        scope.draw_rect_rounded(0, 0, w, h, self.1, self.0);
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
